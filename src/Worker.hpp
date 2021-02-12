@@ -6,6 +6,7 @@
 #include <atomic>
 #include <thread>
 #include <mutex>
+#include <functional>
 #include <condition_variable>
 
 class Worker
@@ -109,17 +110,17 @@ public:
 
     void Notify()
     {
-        for (auto& w = workers_.begin(); w != workers_.end(); ++w)
+        for (auto& w : workers_)
         {
-            (*w)->Notify();
+            w->Notify();
         }
     }
 
     void Join()
     {
-        for (auto& w = workers_.begin(); w != workers_.end(); ++w)
+        for (auto& w : workers_)
         {
-            (*w)->Join();
+            w->Join();
         }
     }
 
@@ -131,9 +132,9 @@ public:
 
     void Terminate()
     {
-        for (auto& w = workers_.begin(); w != workers_.end(); ++w)
+        for (auto& w : workers_)
         {
-            (*w)->Terminate();
+            w->Terminate();
         }
     }
 };
