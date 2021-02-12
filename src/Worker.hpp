@@ -91,7 +91,7 @@ private:
 class WorkerGroup
 {
 private:
-    std::vector<std::shared_ptr<Worker>> workers_;
+    std::vector<std::unique_ptr<Worker>> workers_;
 
 public:
     WorkerGroup()
@@ -103,9 +103,9 @@ public:
         Terminate();
     }
 
-    void AddWorker(std::function<void()> job)
+    void AddWorker(std::unique_ptr<Worker> worker)
     {
-        workers_.push_back(std::make_shared<Worker>(job));
+        workers_.push_back(std::move(worker));
     }
 
     void Notify()

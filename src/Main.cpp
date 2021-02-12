@@ -192,10 +192,10 @@ int main(int argc, char* argv[])
 
     for (int n = 0; n < threads; ++n)
     {
-        workers.AddWorker([=]
+        workers.AddWorker(std::make_unique<Worker>([=]
         {
             NNApproxSearch(n, threads);
-        });
+        }));
     }
 
     workers.Resolve();
