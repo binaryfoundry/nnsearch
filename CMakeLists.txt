@@ -12,10 +12,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(SOURCES
-    "src/Main.cpp")
+    "src/Main.cpp"
+    "src/Worker.cpp")
 
 set(HEADERS
-    "src/Main.hpp")
+    "src/Main.hpp"
+    "src/Worker.hpp")
 
 SOURCE_GROUP("Source" FILES ${SOURCES})
 SOURCE_GROUP("Source" FILES ${HEADERS})
