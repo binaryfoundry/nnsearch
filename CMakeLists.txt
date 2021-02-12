@@ -38,6 +38,8 @@ add_executable(
     ${SOURCES}
     ${HEADERS})
 
-TARGET_LINK_LIBRARIES(
-    ${PROJECT_NAME} pthread)
-
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    TARGET_LINK_LIBRARIES(
+        ${PROJECT_NAME}
+        pthread)
+endif ()
