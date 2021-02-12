@@ -15,19 +15,19 @@ private:
     std::atomic<bool> running;
     std::atomic<bool> executing;
 
-    std::thread* thread_;
+    std::unique_ptr<std::thread> thread_;
     std::mutex mutex_;
     std::condition_variable condition_;
     std::condition_variable condition_join_;
     std::function<void()> job;
 
 public:
-    Worker(std::function<void()> job) :
+    Worker(std::function<void()>&& job) :
         job(std::move(job)),
         running(true),
         executing(false)
     {
-        thread_ = new std::thread([=] {
+        thread_ = std::make_unique<std::thread>([=] {
             thread_loop();
         });
     }
@@ -44,7 +44,6 @@ public:
             running = false;
             condition_.notify_one();
             thread_->join();
-            delete thread_;
         }
     }
 
