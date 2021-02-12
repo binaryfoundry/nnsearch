@@ -148,6 +148,20 @@ int main(int argc, char* argv[])
         };
     }
 
+    // Create thread workers if using concurrency
+#ifdef CONCURRENT
+    int threads = std::thread::hardware_concurrency();
+    WorkerGroup search_workers;
+
+    for (int n = 0; n < threads; ++n)
+    {
+        search_workers.AddWorker(std::make_unique<Worker>([=]
+        {
+            NNApproxSearch(n, threads);
+        }));
+    }
+#endif
+
     timer_start();
 
     // Sort points by buckets using O(n) sort.
@@ -187,22 +201,9 @@ int main(int argc, char* argv[])
     // now run search.
 
 #ifdef CONCURRENT
-    int threads = std::thread::hardware_concurrency();
-    WorkerGroup workers;
-
-    for (int n = 0; n < threads; ++n)
-    {
-        workers.AddWorker(std::make_unique<Worker>([=]
-        {
-            NNApproxSearch(n, threads);
-        }));
-    }
-
-    workers.Resolve();
-
+    search_workers.Resolve();
 #else
-    NNApproxSearch(0, 1);
-
+    NNApproxSearch();
 #endif
 
     timer_end();
@@ -239,7 +240,7 @@ int main(int argc, char* argv[])
     std::cout << std::endl;
 }
 
-void NNApproxSearch(uint32_t start, uint32_t step)
+void NNApproxSearch(uint32_t start = 0, uint32_t step = 1)
 {
     // For each point
     for (uint32_t i = start; i < NUM_POINTS; i += step)
