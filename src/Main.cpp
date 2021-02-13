@@ -7,6 +7,13 @@
 #include <chrono>
 #include <iostream>
 
+// Parameters
+
+#define CONCURRENT
+#define NUM_POINTS 1000000
+#define NUM_BUCKETS 16384
+#define BUCKET_SIZE 0.5f
+
 // Math setup
 
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
@@ -30,8 +37,6 @@ inline uint32_t calc_bucket_shift(const uint32_t bucket_count)
     return 32 - static_cast<uint32_t>(log2(bucket_count));
 }
 
-#define NUM_BUCKETS 16384
-const float bucket_size = 0.5f;
 const uint32_t bucket_shift = calc_bucket_shift(NUM_BUCKETS);
 
 inline uint32_t hash_to_index(const uint32_t hash)
@@ -66,7 +71,7 @@ inline float fract2(const float x)
 
 inline uint32_t generate_bucket_id(const vec3 pos)
 {
-    const vec3 p = (pos + bounds) / bucket_size;
+    const vec3 p = (pos + bounds) / BUCKET_SIZE;
     const uint32_t x = static_cast<uint32_t>(p.x);
     const uint32_t y = static_cast<uint32_t>(p.y);
     const uint32_t z = static_cast<uint32_t>(p.z);
@@ -76,7 +81,7 @@ inline uint32_t generate_bucket_id(const vec3 pos)
 inline uint32_t generate_bucket_id(const vec3 pos, const vec3 offset)
 {
     const vec3 q = vec3(1024.0, 1024.0, 1024.0);
-    const vec3 p0 = (pos + bounds) / bucket_size;
+    const vec3 p0 = (pos + bounds) / BUCKET_SIZE;
 
     const vec3 p1 = p0 + vec3(
         fract2(p0.x) < 0.5 ? -1 : 0,
@@ -109,8 +114,6 @@ inline void timer_end()
 
 // Point cloud
 
-#define NUM_POINTS 1000000
-
 struct Point
 {
     vec3 position;
@@ -130,8 +133,6 @@ void NNApproxSearch(uint32_t start, uint32_t step);
 std::array<uint32_t, NUM_POINTS>  buckets_id;
 std::array<uint32_t, NUM_BUCKETS> buckets_hash;
 std::array<uint32_t, NUM_BUCKETS> buckets_boundary;
-
-#define CONCURRENT
 
 int main(int argc, char* argv[])
 {
