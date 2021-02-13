@@ -31,6 +31,11 @@ std::default_random_engine rand_generator;
 std::uniform_real_distribution<float> rand_distribution(0.0f, 1000.0f);
 inline float next_rand() { return rand_distribution(rand_generator); }
 
+inline float fract2(const float x)
+{
+    return x >= 0. ? x - std::floor(x) : x - std::ceil(x);
+}
+
 // Timing
 
 inline hrc::time_point timer_start()
@@ -52,11 +57,6 @@ const vec3 hash_bounds = vec3(1024.0, 1024.0, 1024.0);
 const uint32_t hash_prime_1 = 73856093u;
 const uint32_t hash_prime_2 = 19349663u;
 const uint32_t hash_prime_3 = 83492791u;
-
-inline float fract2(const float x)
-{
-    return x >= 0. ? x - std::floor(x) : x - std::ceil(x);
-}
 
 inline uint32_t hash(const vec3 pos)
 {
