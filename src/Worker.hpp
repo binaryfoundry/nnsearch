@@ -15,10 +15,10 @@ private:
     std::atomic<bool> active;
     std::atomic<bool> working;
 
-    std::unique_ptr<std::thread> thread_;
-    std::mutex mutex_;
-    std::condition_variable condition_;
-    std::condition_variable condition_join_;
+    std::unique_ptr<std::thread> thread;
+    std::mutex mutex;
+    std::condition_variable condition;
+    std::condition_variable condition_join;
     std::function<void()> job;
 
 public:
@@ -27,7 +27,7 @@ public:
         active(true),
         working(false)
     {
-        thread_ = std::make_unique<std::thread>([=] {
+        thread = std::make_unique<std::thread>([=] {
             thread_loop();
         });
     }
@@ -42,23 +42,23 @@ public:
         if (active)
         {
             active = false;
-            condition_.notify_one();
-            thread_->join();
+            condition.notify_one();
+            thread->join();
         }
     }
 
     void Notify()
     {
         working = true;
-        condition_.notify_one();
+        condition.notify_one();
     }
 
     void Join()
     {
         if (working)
         {
-            std::unique_lock<std::mutex> lock(mutex_);
-            condition_join_.wait(lock, [this] {
+            std::unique_lock<std::mutex> lock(mutex);
+            condition_join.wait(lock, [this] {
                 return !working || !active;
             });
             working = false;
@@ -70,8 +70,8 @@ private:
     {
         do
         {
-            std::unique_lock<std::mutex> lock(mutex_);
-            condition_.wait(lock, [this] {
+            std::unique_lock<std::mutex> lock(mutex);
+            condition.wait(lock, [this] {
                 return working || !active;
             });
 
@@ -80,7 +80,7 @@ private:
                 job();
             }
 
-            condition_join_.notify_one();
+            condition_join.notify_one();
             working = false;
         }
         while (active);
