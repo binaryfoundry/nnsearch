@@ -279,12 +279,11 @@ void NNApproxSearch(uint32_t start = 0, uint32_t step = 1)
     {
         const Point& b0 = point_cloud_sorted[i];
 
-        // search neighbor buckets
+        // Search 8 neighbor buckets
         float nearest_distance = std::numeric_limits<float>::max();
         bool nearest_found = false;
         uint32_t nearest_index = 0;
 
-        // Iterate nearby buckets
         for (uint32_t j = 0; j < 8; j++)
         {
             const uint32_t bucket_index = fib_hash(
@@ -293,12 +292,14 @@ void NNApproxSearch(uint32_t start = 0, uint32_t step = 1)
 
             int32_t k = buckets_boundary[bucket_index];
 
-            // Nothing in this bucket
+            // No boundary found. Nothing in this bucket
             if (k == -1)
             {
                 continue;
             }
 
+            // Loop until a point is found with
+            // a different id to the current bucket.
             int32_t current_bucket_id = 0;
 
             do
