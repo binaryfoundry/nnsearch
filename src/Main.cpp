@@ -58,16 +58,16 @@ inline float fract2(const float x)
     return x >= 0. ? x - std::floor(x) : x - std::ceil(x);
 }
 
-inline uint32_t hash_bucket_id(const vec3 pos)
+inline uint32_t hash(const vec3 pos)
 {
     const vec3 p = (pos + hash_bounds) / BUCKET_SIZE;
     const uint32_t x = static_cast<uint32_t>(p.x);
     const uint32_t y = static_cast<uint32_t>(p.y);
     const uint32_t z = static_cast<uint32_t>(p.z);
-    return fib_hash_to_index(hash_prime_1 * x ^ hash_prime_2 * y ^ hash_prime_3 * z);
+    return hash_prime_1 * x ^ hash_prime_2 * y ^ hash_prime_3 * z;
 }
 
-inline uint32_t hash_bucket_id(const vec3 pos, const vec3 offset)
+inline uint32_t hash(const vec3 pos, const vec3 offset)
 {
     const vec3 q = vec3(1024.0, 1024.0, 1024.0);
     const vec3 p0 = (pos + hash_bounds) / BUCKET_SIZE;
@@ -81,8 +81,18 @@ inline uint32_t hash_bucket_id(const vec3 pos, const vec3 offset)
     const uint32_t x = static_cast<uint32_t>(p2.x);
     const uint32_t y = static_cast<uint32_t>(p2.y);
     const uint32_t z = static_cast<uint32_t>(p2.z);
-    return fib_hash_to_index(hash_prime_1 * x ^ hash_prime_2 * y ^ hash_prime_3 * z);
+    return hash_prime_1 * x ^ hash_prime_2 * y ^ hash_prime_3 * z;
 }
+
+inline uint32_t fib_hash(const vec3 pos)
+{
+    return fib_hash_to_index(hash(pos));
+};
+
+inline uint32_t fib_hash(const vec3 pos, const vec3 offset)
+{
+    return fib_hash_to_index(hash(pos, offset));
+};
 
 const vec3 hash_bucket_offsets[8] = {
     vec3(0, 0, 0),
@@ -140,7 +150,7 @@ int main(int argc, char* argv[])
     for (auto& point : point_cloud_input)
     {
         const vec3 position = vec3(next_rand(), next_rand(), next_rand());
-        const uint32_t bucket_id = hash_bucket_id(position);
+        const uint32_t bucket_id = fib_hash(position);
 
         point =
         {
@@ -270,7 +280,7 @@ void NNApproxSearch(uint32_t start = 0, uint32_t step = 1)
         // Iterate nearby buckets
         for (uint32_t j = 0; j < 8; j++)
         {
-            const uint32_t bucket_index = hash_bucket_id(
+            const uint32_t bucket_index = fib_hash(
                 b0.position,
                 hash_bucket_offsets[j]);
 
