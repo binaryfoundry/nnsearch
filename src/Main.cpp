@@ -163,7 +163,8 @@ int main(int argc, char* argv[])
     }
 #endif
 
-    hrc::time_point main_timer_start_point = timer_start();
+    hrc::time_point total_timer_start_point = timer_start();
+    hrc::time_point sort_timer_start_point = timer_start();
 
     // Sort points by buckets using O(n) sort.
     std::fill(buckets_hash.begin(), buckets_hash.end(), 0);
@@ -184,6 +185,7 @@ int main(int argc, char* argv[])
         point_cloud_sorted[buckets_hash[p.bucket_id]] = p;
     }
 
+
     // Calculate boundaries between buckets_ids of sorted points.
     uint32_t current = NUM_BUCKETS + 1;
     std::fill(buckets_boundary.begin(), buckets_boundary.end(), -1);
@@ -198,8 +200,12 @@ int main(int argc, char* argv[])
         }
     }
 
+    auto sort_time = timer_end(sort_timer_start_point);
+
     // Points are now sorted by hash and we have a map of where groups of ids are,
     // now run search.
+
+    hrc::time_point search_timer_start_point = timer_start();
 
 #ifdef CONCURRENT
     search_workers.Resolve();
@@ -207,7 +213,8 @@ int main(int argc, char* argv[])
     NNApproxSearch();
 #endif
 
-    auto main_time = timer_end(main_timer_start_point);
+    auto total_time = timer_end(total_timer_start_point);
+    auto search_time = timer_end(search_timer_start_point);
 
     // O(n) search for the closest that we found
     float nearest_found_dist = std::numeric_limits<float>::max();
@@ -237,8 +244,14 @@ int main(int argc, char* argv[])
     std::cout << "#" << nearest_found_index_1;
     std::cout << " distance:";
     std::cout << nearest_found_dist;
-    std::cout << " of " << NUM_POINTS;
-    std::cout << " in " << main_time << "ms.";
+    std::cout << " of " << NUM_POINTS << std::endl;
+
+
+    std::cout << "Sort time: " << sort_time << "ms.";
+    std::cout << std::endl;
+    std::cout << "Search time: " << search_time << "ms.";
+    std::cout << std::endl;
+    std::cout << "Total time: " << total_time << "ms.";
     std::cout << std::endl;
 }
 
