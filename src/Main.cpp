@@ -25,63 +25,52 @@
 #include <glm/vec3.hpp>
 using glm::vec3;
 
-std::default_random_engine generator;
-std::uniform_real_distribution<float> distribution(0.0f, 1000.0f);
-inline float next_rand() { return distribution(generator); }
+std::default_random_engine rand_generator;
+std::uniform_real_distribution<float> rand_distribution(0.0f, 1000.0f);
+inline float next_rand() { return rand_distribution(rand_generator); }
 
 // Fibonacci Hashing
 // https://probablydance.com/2018/06/16/
 
-inline uint32_t calc_bucket_shift(const uint32_t bucket_count)
+inline uint32_t fib_calc_bucket_shift(const uint32_t bucket_count)
 {
     return 32 - static_cast<uint32_t>(log2(bucket_count));
 }
 
-const uint32_t bucket_shift = calc_bucket_shift(NUM_BUCKETS);
+const uint32_t fib_bucket_shift = fib_calc_bucket_shift(NUM_BUCKETS);
 
-inline uint32_t hash_to_index(const uint32_t hash)
+inline uint32_t fib_hash_to_index(const uint32_t hash)
 {
-    const uint32_t hash2 = hash ^ (hash >> bucket_shift);
-    return (2654435769u * hash2) >> bucket_shift;
+    const uint32_t hash2 = hash ^ (hash >> fib_bucket_shift);
+    return (2654435769u * hash2) >> fib_bucket_shift;
 }
-
-const vec3 bucket_offsets[8] = {
-    vec3(0, 0, 0),
-    vec3(1, 0, 0),
-    vec3(0, 1, 0),
-    vec3(1, 1, 0),
-    vec3(0, 0, 1),
-    vec3(1, 0, 1),
-    vec3(0, 1, 1),
-    vec3(1, 1, 1)
-};
 
 // Hash functions
 // Generate something to fib-hash.
 
-const vec3 bounds = vec3(1024.0, 1024.0, 1024.0);
-const uint32_t prime_1 = 73856093u;
-const uint32_t prime_2 = 19349663u;
-const uint32_t prime_3 = 83492791u;
+const vec3 hash_bounds = vec3(1024.0, 1024.0, 1024.0);
+const uint32_t hash_prime_1 = 73856093u;
+const uint32_t hash_prime_2 = 19349663u;
+const uint32_t hash_prime_3 = 83492791u;
 
 inline float fract2(const float x)
 {
     return x >= 0. ? x - std::floor(x) : x - std::ceil(x);
 }
 
-inline uint32_t generate_bucket_id(const vec3 pos)
+inline uint32_t hash_bucket_id(const vec3 pos)
 {
-    const vec3 p = (pos + bounds) / BUCKET_SIZE;
+    const vec3 p = (pos + hash_bounds) / BUCKET_SIZE;
     const uint32_t x = static_cast<uint32_t>(p.x);
     const uint32_t y = static_cast<uint32_t>(p.y);
     const uint32_t z = static_cast<uint32_t>(p.z);
-    return hash_to_index(prime_1 * x ^ prime_2 * y ^ prime_3 * z);
+    return fib_hash_to_index(hash_prime_1 * x ^ hash_prime_2 * y ^ hash_prime_3 * z);
 }
 
-inline uint32_t generate_bucket_id(const vec3 pos, const vec3 offset)
+inline uint32_t hash_bucket_id(const vec3 pos, const vec3 offset)
 {
     const vec3 q = vec3(1024.0, 1024.0, 1024.0);
-    const vec3 p0 = (pos + bounds) / BUCKET_SIZE;
+    const vec3 p0 = (pos + hash_bounds) / BUCKET_SIZE;
 
     const vec3 p1 = p0 + vec3(
         fract2(p0.x) < 0.5 ? -1 : 0,
@@ -92,21 +81,34 @@ inline uint32_t generate_bucket_id(const vec3 pos, const vec3 offset)
     const uint32_t x = static_cast<uint32_t>(p2.x);
     const uint32_t y = static_cast<uint32_t>(p2.y);
     const uint32_t z = static_cast<uint32_t>(p2.z);
-    return hash_to_index(prime_1 * x ^ prime_2 * y ^ prime_3 * z);
+    return fib_hash_to_index(hash_prime_1 * x ^ hash_prime_2 * y ^ hash_prime_3 * z);
 }
+
+const vec3 hash_bucket_offsets[8] = {
+    vec3(0, 0, 0),
+    vec3(1, 0, 0),
+    vec3(0, 1, 0),
+    vec3(1, 1, 0),
+    vec3(0, 0, 1),
+    vec3(1, 0, 1),
+    vec3(0, 1, 1),
+    vec3(1, 1, 1)
+};
 
 // Timing
 
-std::chrono::high_resolution_clock::time_point timer_start_point;
+using hrc = std::chrono::high_resolution_clock;
+
+hrc::time_point timer_start_point;
 
 inline void timer_start()
 {
-    timer_start_point = std::chrono::high_resolution_clock::now();
+    timer_start_point = hrc::now();
 }
 
 inline void timer_end()
 {
-    const auto end = std::chrono::high_resolution_clock::now();
+    const auto end = hrc::now();
     const auto time_span = std::chrono::duration_cast<std::chrono::duration<float>>(
         end - timer_start_point);
     std::cout << "RESOLVE TIME: " << (time_span.count() * 1000) << "ms" << std::endl;
@@ -140,7 +142,7 @@ int main(int argc, char* argv[])
     for (auto& point : point_cloud_input)
     {
         const vec3 position = vec3(next_rand(), next_rand(), next_rand());
-        const uint32_t bucket_id = generate_bucket_id(position);
+        const uint32_t bucket_id = hash_bucket_id(position);
 
         point =
         {
@@ -256,9 +258,9 @@ void NNApproxSearch(uint32_t start = 0, uint32_t step = 1)
         // Iterate nearby buckets
         for (uint32_t j = 0; j < 8; j++)
         {
-            const uint32_t bucket_index = generate_bucket_id(
+            const uint32_t bucket_index = hash_bucket_id(
                 b0.position,
-                bucket_offsets[j]);
+                hash_bucket_offsets[j]);
 
             int32_t k = buckets_boundary[bucket_index];
 
