@@ -99,19 +99,17 @@ const vec3 hash_bucket_offsets[8] = {
 
 using hrc = std::chrono::high_resolution_clock;
 
-hrc::time_point timer_start_point;
-
-inline void timer_start()
+inline hrc::time_point timer_start()
 {
-    timer_start_point = hrc::now();
+    return hrc::now();
 }
 
-inline void timer_end()
+inline auto timer_end(hrc::time_point& timer_start_point)
 {
     const auto end = hrc::now();
     const auto time_span = std::chrono::duration_cast<std::chrono::duration<float>>(
         end - timer_start_point);
-    std::cout << "RESOLVE TIME: " << (time_span.count() * 1000) << "ms" << std::endl;
+    return time_span.count() * 1000;
 }
 
 // Point cloud
@@ -165,7 +163,7 @@ int main(int argc, char* argv[])
     }
 #endif
 
-    timer_start();
+    hrc::time_point main_timer_start_point = timer_start();
 
     // Sort points by buckets using O(n) sort.
     std::fill(buckets_hash.begin(), buckets_hash.end(), 0);
@@ -209,7 +207,7 @@ int main(int argc, char* argv[])
     NNApproxSearch();
 #endif
 
-    timer_end();
+    auto main_time = timer_end(main_timer_start_point);
 
     // O(n) search for the closest that we found
     float nearest_found_dist = std::numeric_limits<float>::max();
@@ -240,6 +238,7 @@ int main(int argc, char* argv[])
     std::cout << " distance:";
     std::cout << nearest_found_dist;
     std::cout << " of " << NUM_POINTS;
+    std::cout << " in " << main_time << "ms.";
     std::cout << std::endl;
 }
 
