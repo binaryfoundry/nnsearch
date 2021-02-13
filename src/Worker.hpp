@@ -12,8 +12,8 @@
 class Worker
 {
 private:
-    std::atomic<bool> running;
-    std::atomic<bool> executing;
+    std::atomic<bool> active;
+    std::atomic<bool> working;
 
     std::unique_ptr<std::thread> thread_;
     std::mutex mutex_;
@@ -24,8 +24,8 @@ private:
 public:
     Worker(std::function<void()>&& job) :
         job(std::move(job)),
-        running(true),
-        executing(false)
+        active(true),
+        working(false)
     {
         thread_ = std::make_unique<std::thread>([=] {
             thread_loop();
@@ -39,9 +39,9 @@ public:
 
     void Terminate()
     {
-        if (running)
+        if (active)
         {
-            running = false;
+            active = false;
             condition_.notify_one();
             thread_->join();
         }
@@ -49,19 +49,19 @@ public:
 
     void Notify()
     {
-        executing = true;
+        working = true;
         condition_.notify_one();
     }
 
     void Join()
     {
-        if (executing)
+        if (working)
         {
             std::unique_lock<std::mutex> lock(mutex_);
             condition_join_.wait(lock, [this] {
-                return !executing || !running;
+                return !working || !active;
             });
-            executing = false;
+            working = false;
         }
     }
 
@@ -72,18 +72,18 @@ private:
         {
             std::unique_lock<std::mutex> lock(mutex_);
             condition_.wait(lock, [this] {
-                return executing || !running;
+                return working || !active;
             });
 
-            if (running && executing)
+            if (active && working)
             {
                 job();
             }
 
             condition_join_.notify_one();
-            executing = false;
+            working = false;
         }
-        while (running);
+        while (active);
     }
 };
 
