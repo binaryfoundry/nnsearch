@@ -87,17 +87,17 @@ private:
     }
 };
 
-class WorkerGroup
+class WorkerPool
 {
 private:
     std::vector<std::unique_ptr<Worker>> workers_;
 
 public:
-    WorkerGroup()
+    WorkerPool()
     {
     }
 
-    ~WorkerGroup()
+    ~WorkerPool()
     {
         Terminate();
     }

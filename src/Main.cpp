@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
     // Create thread workers if using concurrency
 #ifdef CONCURRENT
     int threads = std::thread::hardware_concurrency();
-    WorkerGroup search_workers;
+    WorkerPool search_workers;
 
     for (int n = 0; n < threads; ++n)
     {
