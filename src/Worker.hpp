@@ -92,21 +92,6 @@ class WorkerPool
 private:
     std::vector<std::unique_ptr<Worker>> workers_;
 
-public:
-    WorkerPool()
-    {
-    }
-
-    ~WorkerPool()
-    {
-        Terminate();
-    }
-
-    void AddWorker(std::unique_ptr<Worker> worker)
-    {
-        workers_.push_back(std::move(worker));
-    }
-
     void Notify()
     {
         for (auto& w : workers_)
@@ -121,6 +106,21 @@ public:
         {
             w->Join();
         }
+    }
+
+public:
+    WorkerPool()
+    {
+    }
+
+    ~WorkerPool()
+    {
+        Terminate();
+    }
+
+    void AddWorker(std::unique_ptr<Worker> worker)
+    {
+        workers_.push_back(std::move(worker));
     }
 
     void Resolve()
