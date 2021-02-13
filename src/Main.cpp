@@ -218,7 +218,7 @@ int main(int argc, char* argv[])
 #ifdef CONCURRENT
     search_workers.Resolve();
 #else
-    NNApproxSearch();
+    NNApproxSearch(0, 1);
 #endif
 
     auto total_time = timer_end(total_timer_start_point);
