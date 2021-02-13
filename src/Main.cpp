@@ -18,14 +18,14 @@
 using glm::vec3;
 using hrc = std::chrono::high_resolution_clock;
 
-// Parameters
+/* Parameters */
 
 #define CONCURRENT
 #define NUM_POINTS 1000000
 #define NUM_BUCKETS 16384
 #define BUCKET_SIZE 0.5f
 
-// Math setup
+/* Math setup */
 
 std::default_random_engine rand_generator;
 std::uniform_real_distribution<float> rand_distribution(0.0f, 1000.0f);
@@ -36,7 +36,7 @@ inline float fract2(const float x)
     return x >= 0. ? x - std::floor(x) : x - std::ceil(x);
 }
 
-// Timing
+/* Timing  */
 
 inline hrc::time_point timer_start()
 {
@@ -51,7 +51,15 @@ inline auto timer_end(hrc::time_point& timer_start_point)
     return time_span.count() * 1000;
 }
 
-// General hash functions.
+/* General hash functions. */
+
+// Spatial hash from:
+// https://matthias-research.github.io/pages/publications/tetraederCollision.pdf
+// We do not use the local space hashing properties of this function. As the
+// fib hash just needs some high ranging hash to map to a low one. Removing,
+// the fib hash to utilize the spatial cache locality of this function would
+// require setting of 'hash_bounds' to the min/max points in the cloud. As it
+// is currently 'hash_bounds' is not too important.
 
 const vec3 hash_bounds = vec3(1024.0, 1024.0, 1024.0);
 const uint32_t hash_prime_1 = 73856093u;
@@ -95,7 +103,7 @@ const vec3 hash_bucket_offsets[8] = {
     vec3(1, 1, 1)
 };
 
-// Fibonacci Hashing
+/* Fibonacci Hashing */
 // https://probablydance.com/2018/06/16/
 
 inline uint32_t fib_calc_bucket_shift(const uint32_t bucket_count)
@@ -121,7 +129,7 @@ inline uint32_t fib_hash(const vec3 pos, const vec3 offset)
     return fib_hash_to_index(hash(pos, offset));
 };
 
-// Point cloud
+/* Point cloud */
 
 struct Point
 {
@@ -135,7 +143,7 @@ std::array<Point, NUM_POINTS> point_cloud_input;
 std::array<Point, NUM_POINTS> point_cloud_sorted;
 std::array<Point, NUM_POINTS> point_cloud_final;
 
-// Sorting buckets
+/* Sorting buckets */
 
 std::array<uint32_t, NUM_POINTS>  buckets_id;
 std::array<uint32_t, NUM_BUCKETS> buckets_hash;
@@ -178,6 +186,8 @@ int main(int argc, char* argv[])
     // Sort points by buckets using O(n) sort.
     std::fill(buckets_hash.begin(), buckets_hash.end(), 0);
 
+    // This part can be done in parallel using atomics, and would be on the GPU.
+    // But on the CPU gains are not enormous for reasonable sizes of clouds.
     for (auto& p : point_cloud_input)
     {
         buckets_hash[p.bucket_id]++;
