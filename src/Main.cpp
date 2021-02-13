@@ -7,6 +7,17 @@
 #include <chrono>
 #include <iostream>
 
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+#define GLM_ENABLE_EXPERIMENTAL
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+
+#include <glm/glm.hpp>
+#include <glm/vec3.hpp>
+
+using glm::vec3;
+using hrc = std::chrono::high_resolution_clock;
+
 // Parameters
 
 #define CONCURRENT
@@ -15,15 +26,6 @@
 #define BUCKET_SIZE 0.5f
 
 // Math setup
-
-#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
-#define GLM_ENABLE_EXPERIMENTAL
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-
-#include <glm/glm.hpp>
-#include <glm/vec3.hpp>
-using glm::vec3;
 
 std::default_random_engine rand_generator;
 std::uniform_real_distribution<float> rand_distribution(0.0f, 1000.0f);
@@ -106,8 +108,6 @@ const vec3 hash_bucket_offsets[8] = {
 };
 
 // Timing
-
-using hrc = std::chrono::high_resolution_clock;
 
 inline hrc::time_point timer_start()
 {
