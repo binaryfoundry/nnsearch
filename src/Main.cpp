@@ -31,24 +31,22 @@ std::default_random_engine rand_generator;
 std::uniform_real_distribution<float> rand_distribution(0.0f, 1000.0f);
 inline float next_rand() { return rand_distribution(rand_generator); }
 
-// Fibonacci Hashing
-// https://probablydance.com/2018/06/16/
+// Timing
 
-inline uint32_t fib_calc_bucket_shift(const uint32_t bucket_count)
+inline hrc::time_point timer_start()
 {
-    return 32 - static_cast<uint32_t>(log2(bucket_count));
+    return hrc::now();
 }
 
-const uint32_t fib_bucket_shift = fib_calc_bucket_shift(NUM_BUCKETS);
-
-inline uint32_t fib_hash_to_index(const uint32_t hash)
+inline auto timer_end(hrc::time_point& timer_start_point)
 {
-    const uint32_t hash2 = hash ^ (hash >> fib_bucket_shift);
-    return (2654435769u * hash2) >> fib_bucket_shift;
+    const auto end = hrc::now();
+    const auto time_span = std::chrono::duration_cast<std::chrono::duration<float>>(
+        end - timer_start_point);
+    return time_span.count() * 1000;
 }
 
-// Hash functions
-// Generate something to fib-hash.
+// General hash functions.
 
 const vec3 hash_bounds = vec3(1024.0, 1024.0, 1024.0);
 const uint32_t hash_prime_1 = 73856093u;
@@ -86,16 +84,6 @@ inline uint32_t hash(const vec3 pos, const vec3 offset)
     return hash_prime_1 * x ^ hash_prime_2 * y ^ hash_prime_3 * z;
 }
 
-inline uint32_t fib_hash(const vec3 pos)
-{
-    return fib_hash_to_index(hash(pos));
-};
-
-inline uint32_t fib_hash(const vec3 pos, const vec3 offset)
-{
-    return fib_hash_to_index(hash(pos, offset));
-};
-
 const vec3 hash_bucket_offsets[8] = {
     vec3(0, 0, 0),
     vec3(1, 0, 0),
@@ -107,20 +95,31 @@ const vec3 hash_bucket_offsets[8] = {
     vec3(1, 1, 1)
 };
 
-// Timing
+// Fibonacci Hashing
+// https://probablydance.com/2018/06/16/
 
-inline hrc::time_point timer_start()
+inline uint32_t fib_calc_bucket_shift(const uint32_t bucket_count)
 {
-    return hrc::now();
+    return 32 - static_cast<uint32_t>(log2(bucket_count));
 }
 
-inline auto timer_end(hrc::time_point& timer_start_point)
+const uint32_t fib_bucket_shift = fib_calc_bucket_shift(NUM_BUCKETS);
+
+inline uint32_t fib_hash_to_index(const uint32_t hash)
 {
-    const auto end = hrc::now();
-    const auto time_span = std::chrono::duration_cast<std::chrono::duration<float>>(
-        end - timer_start_point);
-    return time_span.count() * 1000;
+    const uint32_t hash2 = hash ^ (hash >> fib_bucket_shift);
+    return (2654435769u * hash2) >> fib_bucket_shift;
 }
+
+inline uint32_t fib_hash(const vec3 pos)
+{
+    return fib_hash_to_index(hash(pos));
+};
+
+inline uint32_t fib_hash(const vec3 pos, const vec3 offset)
+{
+    return fib_hash_to_index(hash(pos, offset));
+};
 
 // Point cloud
 
@@ -136,13 +135,13 @@ std::array<Point, NUM_POINTS> point_cloud_input;
 std::array<Point, NUM_POINTS> point_cloud_sorted;
 std::array<Point, NUM_POINTS> point_cloud_final;
 
-void NNApproxSearch(uint32_t start, uint32_t step);
-
 // Sorting buckets
 
 std::array<uint32_t, NUM_POINTS>  buckets_id;
 std::array<uint32_t, NUM_BUCKETS> buckets_hash;
 std::array<uint32_t, NUM_BUCKETS> buckets_boundary;
+
+void NNApproxSearch(uint32_t start, uint32_t step);
 
 int main(int argc, char* argv[])
 {
@@ -194,7 +193,6 @@ int main(int argc, char* argv[])
         buckets_hash[p.bucket_id] -= 1;
         point_cloud_sorted[buckets_hash[p.bucket_id]] = p;
     }
-
 
     // Calculate boundaries between buckets_ids of sorted points.
     uint32_t current = NUM_BUCKETS + 1;
@@ -255,7 +253,6 @@ int main(int argc, char* argv[])
     std::cout << " distance:";
     std::cout << nearest_found_dist;
     std::cout << " of " << NUM_POINTS << std::endl;
-
 
     std::cout << "Sort time: " << sort_time << "ms.";
     std::cout << std::endl;
